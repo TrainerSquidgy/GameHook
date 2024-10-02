@@ -1,3 +1,6 @@
+# Info
+GameHook was originally created by FlameSage; it was removed in 2023, but I have found a clone of the repo and have re-uploaded it for people's use if required.
+
 # GameHook
 Explore and modify emulated games in real-time via a built-in dashboard and WebAPI.
 
