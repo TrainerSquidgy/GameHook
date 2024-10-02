@@ -185,24 +185,6 @@ namespace GameHook.WPF
 
             if (BuildEnvironment.IsDebug == false)
             {
-                AutoUpdater.AppTitle = "GameHook";
-
-                AutoUpdater.Synchronous = true;
-                AutoUpdater.ShowSkipButton = false;
-                AutoUpdater.HttpUserAgent = "AutoUpdater";
-                AutoUpdater.ReportErrors = true;
-                AutoUpdater.RunUpdateAsAdmin = false;
-
-                AutoUpdater.LetUserSelectRemindLater = false;
-                AutoUpdater.RemindLaterTimeSpan = RemindLaterFormat.Days;
-                AutoUpdater.RemindLaterAt = 1;
-
-                string jsonPath = Path.Combine(BuildEnvironment.ConfigurationDirectory, "updater.json");
-                AutoUpdater.PersistenceProvider = new JsonFilePersistenceProvider(jsonPath);
-
-                AutoUpdater.CheckForUpdateEvent += AutoUpdaterOnCheckForUpdateEvent;
-
-                AutoUpdater.Start("https://cdn.gamehook.io/GameHookWpf_AutoUpdater.xml");
             }
 
             // Determine if WebView2 is installed.

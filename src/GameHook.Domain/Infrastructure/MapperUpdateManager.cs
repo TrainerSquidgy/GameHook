@@ -29,9 +29,9 @@ namespace GameHook.Domain.Infrastructure
         private bool AutomaticMapperUpdates { get; }
         private int CheckForMapperUpdatesMinutes { get; }
 
-        private const string GithubMapperUrl = "https://github.com/gamehook-io/mappers";
-        private const string LatestCommitUrl = "https://api.github.com/repos/gamehook-io/mappers/commits/main";
-        private const string MapperLatestZipUrl = "https://github.com/gamehook-io/mappers/archive/refs/heads/main.zip";
+        private const string GithubMapperUrl = "https://github.com/trainersquidgy/GameHook/Mappers";
+        private const string LatestCommitUrl = "https://api.github.com/repos/TrainerSquidgy/GameHook-Mappers/commits/main";
+        private const string MapperLatestZipUrl = "https://github.com/TrainerSquidgy/GameHook-Mappers/archive/refs/heads/main.zip";
 
         public MapperUpdateManager(ILogger<MapperUpdateManager> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory)
         {

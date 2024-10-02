@@ -60,8 +60,8 @@ public static class BuildEnvironment
 
 
 #if DEBUG
-    public static bool IsDebug => true;
-    public static bool IsTestingBuild => true;
+    public static bool IsDebug => false;
+    public static bool IsTestingBuild => false;
 #else
     public static bool IsDebug = false;
     public static bool IsTestingBuild => AssemblyVersion == "0.0.0.0";
