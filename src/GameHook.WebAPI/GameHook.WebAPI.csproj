@@ -55,4 +55,5 @@
 	<ItemGroup>
 		<Resource Include="wwwroot\dist\gameHookMapperClient.js" />
 	</ItemGroup>
+	
 </Project>

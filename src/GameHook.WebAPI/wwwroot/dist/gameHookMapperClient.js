@@ -310,6 +310,16 @@ class GameHookMapperClient {
             })
     }
 
+    openOverlayEditor() {
+        if (window.chrome?.webview?.postMessage) {
+            window.chrome.webview.postMessage({
+                messageType: 'open-overlay-editor'
+            });
+        } else {
+            alert("Overlay editor can only be opened from within the desktop app.");
+        }
+    }
+
     onConnected() { /* Override this with your own function. */ }
     onDisconnected() { /* Override this with your own function. */ }
 

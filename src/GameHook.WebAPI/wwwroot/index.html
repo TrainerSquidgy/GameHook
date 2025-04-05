@@ -82,247 +82,249 @@
                 </div>
             </div>
 
-            <div class="dropdown is-hoverable">
-                <div class="dropdown-trigger header-menu-item">Help</div>
-                <div class="dropdown-menu" role="menu">
-                    <div class="dropdown-content">
-                        <a class="dropdown-item" href="https://trainersquidgy.com/" target="_blank"> Squidgy's Website</a>
-                        <a class="dropdown-item" href="http://github.com/trainersquidgy/gamehook"
-                           target="_blank">Github</a>
-                        <a class="dropdown-item" href="http://github.com/trainersquidgy/mappers" target="_blank">Mappers
-                            Repository</a>
-                        <a class="dropdown-item" :href="apiDocumentationUrl" target="_blank">API Documentation</a>
-                        <a class="dropdown-item" href="https://github.com/trainersquidgy/gamehook/blob/main/CREDITS.md"
-                           target="_blank">Credits</a>
-                    </div>
+            <!--
+
+        <div class="dropdown is-hoverable">
+            <div class="dropdown-trigger header-menu-item">Overlays</div>
+            <div class="dropdown-menu" role="menu">
+                <div class="dropdown-content">
+                    <a class="dropdown-item" onclick="openOverlayEditor()">Create Overlay.</a>
                 </div>
             </div>
         </div>
+    </div> -->
 
-        <div class="columns mt-3" v-if="loadingMapperWindowOpen">
-            <div class="column is-6 is-offset-3">
-                <div class="m-3">
-                    <p class="my-3">Please select the mapper file you would like to load.</p>
 
-                    <select class="input my-3" v-model="loadingMapperSelectedId">
-                        <option :value="null"></option>
-                        <option v-for="file in loadingMapperFiles" :value="file.id">
-                            {{ file.displayName }}
-                        </option>
-                    </select>
 
-                    <button type="button" class="button" :disabled="!loadingMapperSelectedId || loadingMapper"
-                            v-on:click="replaceMapper(loadingMapperSelectedId)">Load Mapper
-                    </button>
+            <div class="columns mt-3" v-if="loadingMapperWindowOpen">
+                <div class="column is-6 is-offset-3">
+                    <div class="m-3">
+                        <p class="my-3">Please select the mapper file you would like to load.</p>
 
-                    <div class="my-3">
-                        <error-hint :err="loadingMapperError">
-                            Applying the mapper failed.
-                        </error-hint>
-                    </div>
-                </div>
-            </div>
-        </div>
+                        <select class="input my-3" v-model="loadingMapperSelectedId">
+                            <option :value="null"></option>
+                            <option v-for="file in loadingMapperFiles" :value="file.id">
+                                {{ file.displayName }}
+                            </option>
+                        </select>
 
-        <div class="center-wrapper" v-else-if="!mapper.meta">
-            <div>You do not have a mapper loaded.</div>
-        </div>
+                        <button type="button" class="button" :disabled="!loadingMapperSelectedId || loadingMapper"
+                                v-on:click="replaceMapper(loadingMapperSelectedId)">
+                            Load Mapper
+                        </button>
 
-        <div class="columns" v-else>
-            <div class="column is-3">
-                <div class="gh-panel gh-properties-panel">
-                    <div class="gh-panel-header">All Properties</div>
-                    <div class="gh-panel-content">
-                        <tree-view-item :obj="this.mapper.properties" depth="0"/>
+                        <div class="my-3">
+                            <error-hint :err="loadingMapperError">
+                                Applying the mapper failed.
+                            </error-hint>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="column is-6">
-                <div class="gh-panel gh-center-panel">
-                    <div v-bind:class="getTabClasses('pinnedProperties', true)"
-                         v-on:click="centerPanelTab = 'pinnedProperties'">
-                        Pinned Properties
-                    </div>
-                    <div v-bind:class="getTabClasses('frozenProperties')"
-                         v-on:click="centerPanelTab = 'frozenProperties'">
-                        Frozen Properties
-                    </div>
-
-                    <div class="gh-panel-content" v-if="centerPanelTab == 'pinnedProperties'">
-                        <table v-if="pinnedPropertyPaths.length > 0" class="gh-table">
-                            <tr class="has-text-white">
-                                <th class="has-text-white pt-1" style="width: 35%">Property Name</th>
-                                <th class="has-text-white pt-1 bytes-th" style="width: 30%">Value (Bytes)</th>
-                                <th class="has-text-white pt-1" style="width: 25%">Value</th>
-                                <th class="has-text-white pt-1 commands-th" style="min-width: 148px;"></th>
-                            </tr>
-                            <tr v-for="property in getPinnedProperties()">
-                                <td class="pt-1">{{ property.path }}</td>
-                                <td class="pt-1 bytes-td displayPropertyBytes">{{ displayBytes(property.bytes) }}</td>
-                                <td class="pt-1">{{ displayPropertyValue(property) }}</td>
-                                <td class="pt-1 has-text-centered commands-td">
-                                    <description-btn :property="property"></description-btn>
-                                    <freeze-property-btn :property="property"></freeze-property-btn>
-                                    <pin-property-btn :property="property"></pin-property-btn>
-                                    <edit-property-btn :property="property"></edit-property-btn>
-                                </td>
-                            </tr>
-                        </table>
-                        <p v-else>
-                            Properties you pin will appear here.
-                        </p>
-                    </div>
-
-                    <div class="gh-panel-content" v-if="centerPanelTab == 'frozenProperties'">
-                        <table v-if="getFrozenProperties().length > 0" class="gh-table">
-                            <tr class="has-text-white">
-                                <th class="has-text-white pt-1" style="width: 35%">Property Name</th>
-                                <th class="has-text-white pt-1" style="width: 30%">Value (Bytes)</th>
-                                <th class="has-text-white pt-1" style="width: 25%">Value</th>
-                                <th class="has-text-white pt-1 commands-th" style="min-width: 148px;"></th>
-                            </tr>
-                            <tr v-for="property in getFrozenProperties()">
-                                <td class="pt-1">{{ property.path }}</td>
-                                <td class="pt-1 displayPropertyBytes">{{ displayBytes(property.bytes) }}</td>
-                                <td class="pt-1">{{ displayPropertyValue(property) }}</td>
-                                <td class="pt-1 has-text-centered commands-td">
-                                    <description-btn :property="property"></description-btn>
-                                    <freeze-property-btn :property="property"></freeze-property-btn>
-                                    <pin-property-btn :property="property"></pin-property-btn>
-                                    <edit-property-btn :property="property"></edit-property-btn>
-                                </td>
-                            </tr>
-                        </table>
-                        <p v-else>
-                            Properties you have frozen will appear here.
-                        </p>
-                    </div>
-                </div>
+            <div class="center-wrapper" v-else-if="!mapper.meta">
+                <div>You do not have a mapper loaded.</div>
             </div>
 
-            <div class="column is-3">
-                <div class="gh-panel gh-edit-panel" v-if="editingProperty">
-                    <div class="gh-panel-header">Editor</div>
-                    <div class="gh-panel-content">
-                        <table class="gh-table mb-4">
-                            <tr>
-                                <td style="width: 150px;">Path</td>
-                                <td>{{ editingProperty.property.path }}</td>
-                            </tr>
-                            <tr v-if="editingProperty.property.address">
-                                <td>Address</td>
-                                <td>0x{{ decimalToHexdecimal(editingProperty.property.address) }}</td>
-                            </tr>
-                            <tr v-if="editingProperty.property.length">
-                                <td>Length</td>
-                                <td>{{ editingProperty.property.length }}</td>
-                            </tr>
-                            <tr v-if="editingProperty.property.index">
-                                <td>Index</td>
-                                <td>{{ editingProperty.property.index }}</td>
-                            </tr>
-                            <tr>
-                                <td>Type</td>
-                                <td>{{ editingProperty.property.type }}</td>
-                            </tr>
-                            <tr v-if="editingProperty.property.reference">
-                                <td>Reference</td>
-                                <td>{{ editingProperty.property.reference }}</td>
-                            </tr>
-                            <tr v-if="editingProperty.property.description">
-                                <td>Description</td>
-                                <td>{{ editingProperty.property.description }}</td>
-                            </tr>
-                        </table>
+            <div class="columns" v-else>
+                <div class="column is-3">
+                    <div class="gh-panel gh-properties-panel">
+                        <div class="gh-panel-header">All Properties</div>
+                        <div class="gh-panel-content">
+                            <tree-view-item :obj="this.mapper.properties" depth="0" />
+                        </div>
+                    </div>
+                </div>
 
-                        <template v-if="editingProperty.property.isReadOnly">
-                            <div>Property is considered read-only and cannot be modified.</div>
-                        </template>
-                        <template v-else>
-                            <div class="my-4">
-                                <div v-if="editingProperty.property.type === 'string'">
-                                    <div for="value">Value</div>
+                <div class="column is-6">
+                    <div class="gh-panel gh-center-panel">
+                        <div v-bind:class="getTabClasses('pinnedProperties', true)"
+                             v-on:click="centerPanelTab = 'pinnedProperties'">
+                            Pinned Properties
+                        </div>
+                        <div v-bind:class="getTabClasses('frozenProperties')"
+                             v-on:click="centerPanelTab = 'frozenProperties'">
+                            Frozen Properties
+                        </div>
 
-                                    <input class="input is-dark" type="text" v-model="editingProperty.value"/>
-                                </div>
-                                <div v-else-if="editingProperty.property.reference">
-                                    <div for="value">Value</div>
+                        <div class="gh-panel-content" v-if="centerPanelTab == 'pinnedProperties'">
+                            <table v-if="pinnedPropertyPaths.length > 0" class="gh-table">
+                                <tr class="has-text-white">
+                                    <th class="has-text-white pt-1" style="width: 35%">Property Name</th>
+                                    <th class="has-text-white pt-1 bytes-th" style="width: 30%">Value (Bytes)</th>
+                                    <th class="has-text-white pt-1" style="width: 25%">Value</th>
+                                    <th class="has-text-white pt-1 commands-th" style="min-width: 148px;"></th>
+                                </tr>
+                                <tr v-for="property in getPinnedProperties()">
+                                    <td class="pt-1">{{ property.path }}</td>
+                                    <td class="pt-1 bytes-td displayPropertyBytes">{{ displayBytes(property.bytes) }}</td>
+                                    <td class="pt-1">{{ displayPropertyValue(property) }}</td>
+                                    <td class="pt-1 has-text-centered commands-td">
+                                        <description-btn :property="property"></description-btn>
+                                        <freeze-property-btn :property="property"></freeze-property-btn>
+                                        <pin-property-btn :property="property"></pin-property-btn>
+                                        <edit-property-btn :property="property"></edit-property-btn>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p v-else>
+                                Properties you pin will appear here.
+                            </p>
+                        </div>
 
-                                    <select class="input is-dark" v-model="editingProperty.value">
-                                        <option v-for="option in getGlossaryByReferenceKey(editingProperty.property.reference)"
-                                                v-bind:value="option.value.value">
-                                            {{ option.value.value }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div v-else-if="editingProperty.property.type === 'int' || editingProperty.property.type === 'uint' || editingProperty.property.type === 'nibble'">
-                                    <div for="value">Value</div>
+                        <div class="gh-panel-content" v-if="centerPanelTab == 'frozenProperties'">
+                            <table v-if="getFrozenProperties().length > 0" class="gh-table">
+                                <tr class="has-text-white">
+                                    <th class="has-text-white pt-1" style="width: 35%">Property Name</th>
+                                    <th class="has-text-white pt-1" style="width: 30%">Value (Bytes)</th>
+                                    <th class="has-text-white pt-1" style="width: 25%">Value</th>
+                                    <th class="has-text-white pt-1 commands-th" style="min-width: 148px;"></th>
+                                </tr>
+                                <tr v-for="property in getFrozenProperties()">
+                                    <td class="pt-1">{{ property.path }}</td>
+                                    <td class="pt-1 displayPropertyBytes">{{ displayBytes(property.bytes) }}</td>
+                                    <td class="pt-1">{{ displayPropertyValue(property) }}</td>
+                                    <td class="pt-1 has-text-centered commands-td">
+                                        <description-btn :property="property"></description-btn>
+                                        <freeze-property-btn :property="property"></freeze-property-btn>
+                                        <pin-property-btn :property="property"></pin-property-btn>
+                                        <edit-property-btn :property="property"></edit-property-btn>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p v-else>
+                                Properties you have frozen will appear here.
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
-                                    <input class="input is-dark" type="number" v-model="editingProperty.value"/>
-                                </div>
-                                <div v-else-if="editingProperty.property.type === 'bit' || editingProperty.property.type === 'bool'">
-                                    <div for="value">Value:</div>
+                <div class="column is-3">
+                    <div class="gh-panel gh-edit-panel" v-if="editingProperty">
+                        <div class="gh-panel-header">Editor</div>
+                        <div class="gh-panel-content">
+                            <table class="gh-table mb-4">
+                                <tr>
+                                    <td style="width: 150px;">Path</td>
+                                    <td>{{ editingProperty.property.path }}</td>
+                                </tr>
+                                <tr v-if="editingProperty.property.address">
+                                    <td>Address</td>
+                                    <td>0x{{ decimalToHexdecimal(editingProperty.property.address) }}</td>
+                                </tr>
+                                <tr v-if="editingProperty.property.length">
+                                    <td>Length</td>
+                                    <td>{{ editingProperty.property.length }}</td>
+                                </tr>
+                                <tr v-if="editingProperty.property.index">
+                                    <td>Index</td>
+                                    <td>{{ editingProperty.property.index }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Type</td>
+                                    <td>{{ editingProperty.property.type }}</td>
+                                </tr>
+                                <tr v-if="editingProperty.property.reference">
+                                    <td>Reference</td>
+                                    <td>{{ editingProperty.property.reference }}</td>
+                                </tr>
+                                <tr v-if="editingProperty.property.description">
+                                    <td>Description</td>
+                                    <td>{{ editingProperty.property.description }}</td>
+                                </tr>
+                            </table>
 
-                                    <select class="input is-dark" v-model="editingProperty.value">
-                                        <option value="true">
-                                            True
-                                        </option>
-                                        <option value="false">
-                                            False
-                                        </option>
-                                    </select>
-                                </div>
-                                <div v-else>
-                                    <div for="value">Value:</div>
+                            <template v-if="editingProperty.property.isReadOnly">
+                                <div>Property is considered read-only and cannot be modified.</div>
+                            </template>
+                            <template v-else>
+                                <div class="my-4">
+                                    <div v-if="editingProperty.property.type === 'string'">
+                                        <div for="value">Value</div>
 
-                                    {{ editingProperty.value }}
+                                        <input class="input is-dark" type="text" v-model="editingProperty.value" />
+                                    </div>
+                                    <div v-else-if="editingProperty.property.reference">
+                                        <div for="value">Value</div>
+
+                                        <select class="input is-dark" v-model="editingProperty.value">
+                                            <option v-for="option in getGlossaryByReferenceKey(editingProperty.property.reference)"
+                                                    v-bind:value="option.value.value">
+                                                {{ option.value.value }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div v-else-if="editingProperty.property.type === 'int' || editingProperty.property.type === 'uint' || editingProperty.property.type === 'nibble'">
+                                        <div for="value">Value</div>
+
+                                        <input class="input is-dark" type="number" v-model="editingProperty.value" />
+                                    </div>
+                                    <div v-else-if="editingProperty.property.type === 'bit' || editingProperty.property.type === 'bool'">
+                                        <div for="value">Value:</div>
+
+                                        <select class="input is-dark" v-model="editingProperty.value">
+                                            <option value="true">
+                                                True
+                                            </option>
+                                            <option value="false">
+                                                False
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div v-else>
+                                        <div for="value">Value:</div>
+
+                                        {{ editingProperty.value }}
+                                    </div>
+
+                                    <div class="my-4">
+                                        <div for="bytes">Bytes:</div>
+
+                                        <bytes-editor v-bind.sync="{ editingProperty: editingProperty }">
+                                        </bytes-editor>
+                                    </div>
                                 </div>
 
                                 <div class="my-4">
-                                    <div for="bytes">Bytes:</div>
-
-                                    <bytes-editor v-bind.sync="{ editingProperty: editingProperty }">
-                                    </bytes-editor>
+                                    <label class="checkbox">
+                                        <input type="checkbox" v-model="editingProperty.frozen">
+                                        Freeze this property
+                                    </label>
                                 </div>
-                            </div>
 
-                            <div class="my-4">
-                                <label class="checkbox">
-                                    <input type="checkbox" v-model="editingProperty.frozen">
-                                    Freeze this property
-                                </label>
-                            </div>
+                                <template v-if="editingProperty.didValueChange()">
+                                    <div class="button is-primary is-fullwidth my-2" v-on:click="saveEditingProperty">
+                                        Save
+                                        Value Changes
+                                    </div>
+                                </template>
+                                <template v-else-if="editingProperty.didBytesChange()">
+                                    <div class="button is-primary is-fullwidth my-2" v-on:click="saveEditingProperty">
+                                        Save
+                                        Bytes Changes
+                                    </div>
+                                </template>
+                                <template v-else-if="editingProperty.didFrozenChange()">
+                                    <div class="button is-primary is-fullwidth my-2" v-on:click="saveEditingProperty">
+                                        Save
+                                        Changes
+                                    </div>
+                                </template>
 
-                            <template v-if="editingProperty.didValueChange()">
-                                <div class="button is-primary is-fullwidth my-2" v-on:click="saveEditingProperty">Save
-                                    Value Changes
-                                </div>
-                            </template>
-                            <template v-else-if="editingProperty.didBytesChange()">
-                                <div class="button is-primary is-fullwidth my-2" v-on:click="saveEditingProperty">Save
-                                    Bytes Changes
-                                </div>
-                            </template>
-                            <template v-else-if="editingProperty.didFrozenChange()">
-                                <div class="button is-primary is-fullwidth my-2" v-on:click="saveEditingProperty">Save
+                                <div class="button is-secondary is-fullwidth my-2" v-on:click="cancelEditingProperty">
+                                    Cancel
                                     Changes
                                 </div>
+
+                                <error-hint :err="editingPropertyError">
+                                    Updating the property failed.
+                                </error-hint>
                             </template>
-
-                            <div class="button is-secondary is-fullwidth my-2" v-on:click="cancelEditingProperty">Cancel
-                                Changes
-                            </div>
-
-                            <error-hint :err="editingPropertyError">
-                                Updating the property failed.
-                            </error-hint>
-                        </template>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </template>
+</template>
 </div>
 
 <svg width="0" height="0" style="display: none;">
@@ -573,6 +575,19 @@
             <tree-view-item key="key" :obj="obj[key]" :depth="parseInt(this.depth) + 1">{{ key }}</tree-view-item>
           </template>
           </div>`
+    }
+
+    function openOverlayEditor() {
+        fetch("/OverlayEditor", {
+            method: "POST"
+        }).then(response => {
+            if (!response.ok) {
+                alert("Failed to open the Overlay Editor.");
+            }
+        }).catch(err => {
+            console.error("Error opening Overlay Editor:", err);
+            alert("Something went wrong.");
+        });
     }
 
     const app = Vue.createApp({
