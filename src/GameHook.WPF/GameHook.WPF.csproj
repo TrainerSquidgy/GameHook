@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>0.0.0.0</Version>
-		<Product>GameHook</Product>
+		<Version>0.0.1.0</Version>
+		<Product>GameHook 2</Product>
 		<ProductVersion>0.0.0.0+dev</ProductVersion>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<TargetFramework>net6.0-windows</TargetFramework>
@@ -16,9 +16,10 @@
 		<SelfContained>true</SelfContained>
 		<DebugType>embedded</DebugType>
 		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-		<ApplicationIcon>icon.ico</ApplicationIcon>
+		<ApplicationIcon>newicon.ico</ApplicationIcon>
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>true</UseWindowsForms>
+		<PackageIcon>GameHook2.png</PackageIcon>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -37,6 +38,17 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<Link>DefaultUserData\%(RecursiveDir)%(Filename)%(Extension)</Link>
 		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="GameHook2(1).ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="G:\GameHook2.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 	
 

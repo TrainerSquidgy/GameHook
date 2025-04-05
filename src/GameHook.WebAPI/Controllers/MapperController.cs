@@ -5,6 +5,7 @@ using GameHook.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
 
 namespace GameHook.WebAPI.Controllers
 {
@@ -134,6 +135,36 @@ namespace GameHook.WebAPI.Controllers
             _retroArchUdpPollingDriver = retroArchUdpPollingDriver;
             _staticMemoryDriver = nullDriver;
         }
+
+        [HttpPost("open-mappers-folder")]
+            [SwaggerOperation("Opens the user's local Mappers folder in File Explorer.")]
+            public ActionResult OpenUserMappersFolder()
+            {
+                var folderPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "GameHook",
+                    "Mappers"
+                );
+
+                try
+                {
+                    if (!Directory.Exists(folderPath))
+                        Directory.CreateDirectory(folderPath);
+
+                    System.Diagnostics.Process.Start("explorer.exe", folderPath);
+                    return Ok();
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new ProblemDetails
+                    {
+                        Title = "Could not open folder",
+                        Detail = ex.Message,
+                        Status = 500
+                    });
+                }
+            }
+
 
         [HttpGet]
         [SwaggerOperation("Returns the mapper that was loaded, with all properties (populated with data).")]

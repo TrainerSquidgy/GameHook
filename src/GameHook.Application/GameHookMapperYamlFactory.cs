@@ -262,7 +262,7 @@ namespace GameHook.Application
 
                 IGameHookProperty property;
                 if (type == "binaryCodedDecimal") property = new BinaryCodedDecimalProperty(instance, variables);
-                else if (type == "bitField") property = new BitFieldProperty(instance, variables);
+                else if (type == "bitArray") property = new BitFieldProperty(instance, variables);
                 else if (type == "bit") property = new BitProperty(instance, variables);
                 else if (type == "bool") property = new BooleanProperty(instance, variables);
                 else if (type == "int") property = new IntegerProperty(instance, variables);

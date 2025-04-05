@@ -1,0 +1,27 @@
+meta:
+  schemaVersion: 1
+  id: 96afc3ef-4b40-48d6-bb22-36d88f3dae8f
+  gameName: Lemmings
+  gamePlatform: SMS
+
+properties:
+  timer:
+    minutes: { type: "uint", address: 0x1AD1 }
+    seconds_digit1: { type: "uint", address: 0x1AD2 }
+    seconds_digit2: { type: "uint", address: 0x1AD3 }
+
+  skills:
+    climbers: { type: "uint", address: 0x1B72 }
+    floaters: { type: "uint", address: 0x1B73 }
+    bombers: { type: "uint", address: 0x1B74 }
+    blockers: { type: "uint", address: 0x1B75 }
+    builders: { type: "uint", address: 0x1B76 }
+    bashers: { type: "uint", address: 0x1B77 }
+    miners: { type: "uint", address: 0x1B78 }
+    diggers: { type: "uint", address: 0x1B79 }
+
+  level:
+    number: { type: "uint", address: 0x1B9D }
+    difficulty: { type: "uint", address: 0x1B9E }
+
+glossary: {}

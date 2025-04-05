@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<Version>0.0.0.0</Version>
-		<Product>GameHook</Product>
+		<Product>GameHook 2</Product>
 		<ProductVersion>0.0.0.0+dev</ProductVersion>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<TargetFramework>net6.0</TargetFramework>
@@ -14,7 +14,7 @@
 		<PublishTrimmed>true</PublishTrimmed>
 		<SelfContained>true</SelfContained>
 		<DebugType>embedded</DebugType>
-		<ApplicationIcon>icon.ico</ApplicationIcon>
+		<ApplicationIcon>newicon.ico</ApplicationIcon>
 		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
 	</PropertyGroup>
 
@@ -29,7 +29,7 @@
 	<ItemGroup>
 		<EmbeddedResource Include="appsettings.json" />
 		<EmbeddedResource Include="wwwroot\dist\gameHookMapperClient.js" />
-		<EmbeddedResource Include="wwwroot\favicon.ico" />
+		<EmbeddedResource Include="wwwroot\newfavicon.ico" />
 		<EmbeddedResource Include="wwwroot\index.html" />
 		<EmbeddedResource Include="wwwroot\site.css" />
 	</ItemGroup>

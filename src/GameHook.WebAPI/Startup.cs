@@ -102,13 +102,13 @@ namespace GameHook.WebAPI
                     Title = "GameHook API",
                     Contact = new OpenApiContact
                     {
-                        Name = "GameHook",
-                        Url = new Uri("https://gamehook.io/")
+                        Name = "Squidgy",
+                        Url = new Uri("https://trainersquidgy.com/")
                     },
                     License = new OpenApiLicense
                     {
                         Name = "GNU Affero General Public License v3.0",
-                        Url = new Uri("https://github.com/gamehook-io/gamehook/blob/main/LICENSE.txt")
+                        Url = new Uri("https://github.com/trainersquidgy/gamehook/blob/main/LICENSE.txt")
                     }
                 });
             });

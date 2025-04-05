@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8"/>
-    <title>GameHook</title>
+    <title>GameHook 2</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css"
           integrity="sha256-UDtbUHqpVVfXmdJcQVU/bfDEr9xldf3Dbd0ShD0Uf/Y=" crossorigin="anonymous">
     <link href="site.css" rel="stylesheet"/>
@@ -12,7 +12,7 @@
 <body>
 <div id="app">
     <div class="center-wrapper" v-if="connected == false">
-        <loading-spinner>Establishing a connection to GameHook...</loading-spinner>
+        <loading-spinner>Loading GameHook Resources, please wait...</loading-spinner>
     </div>
     <div class="center-wrapper" v-else-if="loadingMapper">
         <loading-spinner>Loading mapper...</loading-spinner>
@@ -25,6 +25,7 @@
                     <div class="dropdown-content">
                         <a href="#" class="dropdown-item" v-on:click="openLoadingMapper">Load Mapper</a>
                         <a href="#" class="dropdown-item" v-on:click="replaceMapper()">Reload Mapper</a>
+                        <a class="dropdown-item" href="#" @click.prevent="openMappersFolder">Open Mappers Folder</a>
                     </div>
                 </div>
             </div>
@@ -88,10 +89,10 @@
                         <a class="dropdown-item" href="https://trainersquidgy.com/" target="_blank"> Squidgy's Website</a>
                         <a class="dropdown-item" href="http://github.com/trainersquidgy/gamehook"
                            target="_blank">Github</a>
-                        <a class="dropdown-item" href="http://github.com/gamehook-io/mappers" target="_blank">Mappers
+                        <a class="dropdown-item" href="http://github.com/trainersquidgy/mappers" target="_blank">Mappers
                             Repository</a>
                         <a class="dropdown-item" :href="apiDocumentationUrl" target="_blank">API Documentation</a>
-                        <a class="dropdown-item" href="https://github.com/gamehook-io/gamehook/blob/main/CREDITS.md"
+                        <a class="dropdown-item" href="https://github.com/trainersquidgy/gamehook/blob/main/CREDITS.md"
                            target="_blank">Credits</a>
                     </div>
                 </div>
@@ -660,6 +661,19 @@
                 } else {
                     throw new Error(`Invalid user setting found for displayBytesMode: ${mode}.`)
                 }
+            },
+
+            openMappersFolder() {
+                fetch("/mapper/open-mappers-folder", {
+                    method: "POST"
+                }).then(response => {
+                    if (!response.ok) {
+                        alert("Failed to open the Mappers folder.");
+                    }
+                }).catch(err => {
+                    console.error("Error opening Mappers folder:", err);
+                    alert("Something went wrong.");
+                });
             },
 
             getTabClasses: function (tab, isFirstEntry = false) {
