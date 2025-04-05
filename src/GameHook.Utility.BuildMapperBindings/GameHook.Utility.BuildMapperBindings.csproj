@@ -9,10 +9,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Include="..\GameHook.WPF\MainWindow.xaml.cs" Link="MainWindow.xaml.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
       <Page Include="..\GameHook.WPF\MainWindow.xaml">
         <Generator>MSBuild:Compile</Generator>
         <Link>MainWindow.xaml</Link>

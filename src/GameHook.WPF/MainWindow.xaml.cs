@@ -198,6 +198,14 @@ namespace GameHook.WPF
                 isWebView2Installed = false;
             }
 
+            var roamingPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GameHook");
+            var defaultDataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DefaultUserData");
+
+            if (!Directory.Exists(roamingPath))
+            {
+                CopyDirectory(defaultDataPath, roamingPath);
+            }
+
             InitializeComponent();
 
             if (App.Singleton != null)
@@ -260,6 +268,19 @@ namespace GameHook.WPF
             e.Handled = true;
         }
 
+        private static void CopyDirectory(string sourceDir, string targetDir)
+        {
+            Directory.CreateDirectory(targetDir);
+
+            foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+            {
+                var relativePath = Path.GetRelativePath(sourceDir, file);
+                var targetFile = Path.Combine(targetDir, relativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(targetFile)!);
+                File.Copy(file, targetFile, overwrite: true);
+            }
+        }
+
         protected void NavigateInstallWebView2(object sender, RoutedEventArgs e)
         {
             var sInfo = new System.Diagnostics.ProcessStartInfo("https://go.microsoft.com/fwlink/p/?LinkId=2124703")
@@ -271,3 +292,4 @@ namespace GameHook.WPF
         }
     }
 }
+

@@ -30,6 +30,56 @@ namespace GameHook.WebAPI
             AppSettings = configuration.Get<AppSettings>() ?? throw new Exception("Unable to bind application settings to AppSettings.");
         }
 
+        private void EnsureDefaultUserDataCopied(Microsoft.Extensions.Logging.ILogger logger)
+        {
+            var appDataPath = BuildEnvironment.ConfigurationDirectory;
+            var defaultDataPath = Path.Combine(AppContext.BaseDirectory, "DefaultUserData");
+
+            if (!Directory.Exists(defaultDataPath))
+            {
+                logger.LogWarning("DefaultUserData folder not found in output directory.");
+                return;
+            }
+
+            string[] requiredFolders = { "Mappers", "MapperUserSettings", "UiBuilderScreens" };
+            foreach (var folder in requiredFolders)
+            {
+                var source = Path.Combine(defaultDataPath, folder);
+                var target = Path.Combine(appDataPath, folder);
+
+                if (!Directory.Exists(target))
+                {
+                    if (Directory.Exists(source))
+                    {
+                        CopyAll(new DirectoryInfo(source), new DirectoryInfo(target));
+                        logger.LogInformation($"Copied default '{folder}' to AppData.");
+                    }
+                    else
+                    {
+                        logger.LogWarning($"Expected default data folder '{source}' not found.");
+                    }
+                }
+            }
+        }
+
+        private static void CopyAll(DirectoryInfo source, DirectoryInfo target)
+        {
+            Directory.CreateDirectory(target.FullName);
+
+            foreach (FileInfo file in source.GetFiles())
+            {
+                string targetFilePath = Path.Combine(target.FullName, file.Name);
+                if (!File.Exists(targetFilePath))
+                    file.CopyTo(targetFilePath);
+            }
+
+            foreach (DirectoryInfo subDir in source.GetDirectories())
+            {
+                DirectoryInfo nextTargetSubDir = target.CreateSubdirectory(subDir.Name);
+                CopyAll(subDir, nextTargetSubDir);
+            }
+        }
+
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHttpClient();
@@ -40,10 +90,7 @@ namespace GameHook.WebAPI
             services.AddSwaggerGen(x =>
             {
                 x.DocumentFilter<DefaultSwashbuckleFilter>();
-
                 x.EnableAnnotations();
-
-                // Use method name as operationId
                 x.CustomOperationIds(apiDesc =>
                 {
                     return apiDesc.TryGetMethodInfo(out MethodInfo methodInfo) ? methodInfo.Name : null;
@@ -66,7 +113,6 @@ namespace GameHook.WebAPI
                 });
             });
 
-            // Add Web API
             services
                 .AddControllers()
                 .AddApplicationPart(typeof(Program).Assembly)
@@ -87,7 +133,6 @@ namespace GameHook.WebAPI
                 };
             });
 
-            // Register application classes.
             services.AddSingleton<DriverOptions>();
             services.AddSingleton<IMapperFilesystemProvider, MapperFilesystemProvider>();
             services.AddSingleton<IMapperUpdateManager, MapperUpdateManager>();
@@ -98,13 +143,13 @@ namespace GameHook.WebAPI
             services.AddSingleton<ScriptConsole>();
             services.AddSingleton<IClientNotifier, WebSocketClientNotifier>();
 
-            if (AppSettings.OUTPUT_ALL_PROPERTIES_TO_FILESYSTEM)
+            if (this.AppSettings.OUTPUT_ALL_PROPERTIES_TO_FILESYSTEM)
             {
                 services.AddSingleton<IClientNotifier, OutputPropertiesToFilesystem>();
             }
         }
 
-        public void Configure(IApplicationBuilder app, ILogger<Startup> logger, IConfiguration configuration, IMapperUpdateManager updateManager)
+        public void Configure(IApplicationBuilder app, Microsoft.Extensions.Logging.ILogger<Startup> logger, IConfiguration configuration, IMapperUpdateManager updateManager)
         {
             if (BuildEnvironment.IsTestingBuild)
             {
@@ -118,18 +163,14 @@ namespace GameHook.WebAPI
 
             Directory.CreateDirectory(BuildEnvironment.ConfigurationDirectory);
 
-            // TODO: DEPRECATED FEATURE - Remove this code later. 5/19/2023
+            // Clean old deprecated folders
             if (Directory.Exists(BuildEnvironment.MapperUserSettingsDirectory))
-            {
                 Directory.Delete(BuildEnvironment.MapperUserSettingsDirectory, true);
-            }
 
-            // TODO: DEPRECATED FEATURE - Remove this code later. 5/19/2023
             if (Directory.Exists(BuildEnvironment.ConfigurationDirectoryUiBuilderScreenDirectory))
-            {
                 Directory.Delete(BuildEnvironment.ConfigurationDirectoryUiBuilderScreenDirectory, true);
-            }
 
+            EnsureDefaultUserDataCopied(logger);
             updateManager.CheckForUpdates().GetAwaiter().GetResult();
 
             app.UseCors(x =>
@@ -140,7 +181,6 @@ namespace GameHook.WebAPI
                 x.AllowCredentials();
             });
 
-            // Use Swagger
             app.UseSwagger();
             app.UseSwaggerUI();
 
@@ -169,14 +209,13 @@ namespace GameHook.WebAPI
                 }
 
                 x.MapControllers();
-
                 x.MapHub<UpdateHub>("/updates");
             });
 
             logger.LogInformation("GameHook is now online.");
-            logger.LogInformation($"UI accessible via {string.Join(", ", AppSettings.Urls)}");
+            logger.LogInformation($"UI accessible via {string.Join(", ", this.AppSettings.Urls)}");
 
-            if (AppSettings.OUTPUT_ALL_PROPERTIES_TO_FILESYSTEM)
+            if (this.AppSettings.OUTPUT_ALL_PROPERTIES_TO_FILESYSTEM)
             {
                 logger.LogInformation("Outputting all properties to the filesystem.");
             }

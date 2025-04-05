@@ -1,0 +1,4 @@
+2025/04/05-00:04:35.865 8580 Reusing MANIFEST C:\Users\Callum\AppData\Roaming\GameHook\WebView2\EBWebView\Default\Local Storage\leveldb/MANIFEST-000001
+2025/04/05-00:04:35.885 8580 Recovering log #19
+2025/04/05-00:04:35.885 8580 (ignoring error) C:\Users\Callum\AppData\Roaming\GameHook\WebView2\EBWebView\Default\Local Storage\leveldb/000019.log: dropping 841 bytes; Corruption: checksum mismatch
+2025/04/05-00:04:35.892 8580 Reusing old log C:\Users\Callum\AppData\Roaming\GameHook\WebView2\EBWebView\Default\Local Storage\leveldb/000019.log 
