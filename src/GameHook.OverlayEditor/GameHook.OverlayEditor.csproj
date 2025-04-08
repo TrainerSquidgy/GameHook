@@ -13,7 +13,7 @@
     <ProjectReference Include="..\GameHook.Domain\GameHook.Domain.csproj" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	  <PackageReference Include="System.Net.Http.Json" Version="7.0.0" />
-	  <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.3" />
+	  <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.5" />
   </ItemGroup>
 
 	

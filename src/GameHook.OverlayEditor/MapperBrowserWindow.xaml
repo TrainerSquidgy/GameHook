@@ -7,9 +7,9 @@
         Foreground="White"
         WindowStartupLocation="CenterOwner">
     <Grid>
-        <TreeView x:Name="PropertyTree"
-          Margin="8"
-          Background="Transparent"
-          Foreground="White"/>
+        <StackPanel x:Name="PropertyListPanel"
+            Orientation="Vertical"
+            Background="#1E1E1E"
+            Margin="0"/>
     </Grid>
 </Window>

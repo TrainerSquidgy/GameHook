@@ -1,68 +1,109 @@
-﻿using Microsoft.AspNetCore.SignalR.Client;
+﻿using Esprima.Ast;
+using Microsoft.AspNetCore.SignalR.Client;
 using Newtonsoft.Json.Linq;
 using System;
+using System.IO;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
+using YamlDotNet.Core.Tokens;
 
 namespace GameHook.OverlayEditor
 {
     public partial class MapperBrowserWindow : Window
     {
+        private bool _hasSubscribedToUpdates = false;
         private readonly MainWindow _main;
-        private HubConnection _hubConnection;
+        private readonly Dictionary<string, TextBlock> _propertyBlocks = new();
+        private HubConnection? _hubConnection;
         private static readonly HttpClient _httpClient = new HttpClient();
+        private class Node
+
+        {
+            public string Name { get; set; }
+            public string FullPath { get; set; } = "";
+            public string? Value { get; set; } // Only non-null at leaf nodes
+            public Dictionary<string, Node> Children { get; } = new();
+
+
+            public Node(string name)
+            {
+                Name = name;
+            }
+
+            public Node GetOrAddChild(string name)
+            {
+                if (!Children.ContainsKey(name))
+                {
+                    Children[name] = new Node(name);
+                }
+                return Children[name];
+            }
+        }
 
         public MapperBrowserWindow(MainWindow main)
         {
             InitializeComponent();
             _main = main;
 
-            _ = LoadMapperPropertiesAsync();
+            string debugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MapperUpdateLog.txt");
 
 
+            Loaded += MapperBrowserWindow_Loaded;
 
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl("http://localhost:8085/mapperhub")
-                .Build();
+            File.AppendAllText(debugPath, $"[{DateTime.Now}] Mapper window loaded.\n");
+        }
 
-            _hubConnection.On<string, JToken>("PropertyChanged", (path, newValue) =>
+        private async void MapperBrowserWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            await LoadMapperPropertiesAsync();
+            foreach (var key in _propertyBlocks.Keys)
             {
-                Dispatcher.Invoke(() =>
-                {
-                    UpdateTreeValue(path, newValue?.ToString() ?? "(no value)");
-                });
-            });
-
-            _ = _hubConnection.StartAsync();
+                LogToFile($"Tracking UI element: {key}");
+            }
         }
 
         private async Task LoadMapperPropertiesAsync()
+
         {
             try
             {
                 var response = await _httpClient.GetAsync("http://localhost:8085/mapper/properties");
-                var json = await response.Content.ReadAsStringAsync();
-                var jObj = JObject.Parse(json);
-                var properties = jObj["mapper"]?["properties"] as JObject;
-                if (properties == null) return;
 
-                var flat = FlattenJObject(properties, "mapper.properties");
-
-                var expanded = GetExpandedPaths(PropertyTree);
-                
-
-                // NEW PATCHING LOGIC
-                foreach (var kvp in flat)
+                if (!response.IsSuccessStatusCode)
                 {
-                    PatchOrInsert(PropertyTree, kvp.Key.Split('.'), kvp.Key, kvp.Value);
+                    MessageBox.Show("Failed to load mapper properties.");
+                    return;
                 }
 
-                // Restore expanded state
-                RestoreExpandedPaths(PropertyTree, expanded);
+                var json = await response.Content.ReadAsStringAsync();
+                var propertiesArray = JArray.Parse(json);
+
+                // Clear the UI list (will repopulate after rendering tree later)
+                PropertyListPanel.Children.Clear();
+
+                // Parse properties into (path, value) tuples
+                var flatProperties = new List<(string path, string value)>();
+                foreach (var item in propertiesArray)
+                {
+                    var path = item["path"]?.ToString() ?? "(no path)";
+                    var value = item["value"]?.ToString() ?? "(no value)";
+                    flatProperties.Add((path, value));
+                }
+
+                // Build the tree structure (but don't render it yet)
+                Node root = BuildTreeFromPaths(flatProperties);
+
+                RenderNodeToPanel(root, PropertyListPanel);
+                await ConnectToSignalR();
+                string debugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MapperUpdateLog.txt");
+                File.AppendAllText(debugPath, $"[{DateTime.Now}] ConnectToSignalR() started.\n");
             }
             catch (Exception ex)
             {
@@ -70,165 +111,173 @@ namespace GameHook.OverlayEditor
             }
         }
 
-        private Dictionary<string, string> FlattenJObject(JObject obj, string prefix)
+        private Node BuildTreeFromPaths(List<(string path, string value)> flatProperties)
         {
-            var result = new Dictionary<string, string>();
+            var root = new Node("root") { FullPath = "" };
 
-            foreach (var prop in obj.Properties())
+            foreach (var (path, value) in flatProperties)
             {
-                var path = $"{prefix}.{prop.Name}";
-                if (prop.Value is JObject nested)
+                var parts = path.Split('.');
+                var current = root;
+
+                foreach (var part in parts.Take(parts.Length - 1))
                 {
-                    var sub = FlattenJObject(nested, path);
-                    foreach (var kv in sub)
-                        result[kv.Key] = kv.Value;
+                    current = current.GetOrAddChild(part);
+                }
+
+                var leaf = parts.Last();
+                var leafNode = current.GetOrAddChild(leaf);
+                leafNode.Value = value;
+                leafNode.FullPath = path;
+            }
+
+            return root;
+        }
+
+
+
+        private void RenderNodeToPanel(Node node, Panel panel)
+        {
+            foreach (var child in node.Children.Values)
+            {
+                if (child.Children.Count > 0)
+                {
+                    // Group/folder
+                    var expander = new Expander
+                    {
+                        Header = child.Name,
+                        Foreground = Brushes.LightGray,
+                        FontWeight = FontWeights.Bold,
+                        Margin = new Thickness(6, 2, 6, 2)
+                    };
+
+                    var innerPanel = new StackPanel { Margin = new Thickness(12, 0, 0, 0) };
+                    RenderNodeToPanel(child, innerPanel);
+                    expander.Content = innerPanel;
+
+                    panel.Children.Add(expander);
                 }
                 else
                 {
-                    result[path] = prop.Value?.ToString() ?? "(null)";
-                }
-            }
-
-            return result;
-        }
-
-        private void PatchOrInsert(ItemsControl parent, string[] segments, string fullPath, string value, int index = 0)
-        {
-            if (index >= segments.Length) return;
-
-            string current = segments[index];
-            TreeViewItem? nextNode = null;
-
-            foreach (TreeViewItem child in parent.Items)
-            {
-                // Check for value node
-                if (index == segments.Length - 1)
-                {
-                    if (child.Header is TextBlock tb && tb.Text.StartsWith(current))
+                    // Leaf/value
+                    var text = new TextBlock
                     {
-                        tb.Text = $"{current}: {value}";
-                        return;
-                    }
-                }
-                // Check for branch node
-                else if (child.Header is string header && header == current)
-                {
-                    nextNode = child;
-                    break;
-                }
-            }
-
-            // Not found, insert it
-            if (nextNode == null)
-            {
-                if (index == segments.Length - 1)
-                {
-                    var textBlock = new TextBlock
-                    {
-                        Text = $"{current}: {value}",
-                        Foreground = Brushes.LightGreen
+                        Text = $"{child.FullPath}: {child.Value}",
+                        Foreground = Brushes.LightGreen,
+                        Margin = new Thickness(12, 2, 6, 2),
+                        Cursor = Cursors.Hand
                     };
 
-                    var item = new TreeViewItem
+                    // Track this block by full path
+                    _propertyBlocks[child.FullPath] = text;
+
+                    // Context menu
+                    var menu = new ContextMenu();
+                    var assignItem = new MenuItem { Header = "Assign to selected element" };
+                    assignItem.Click += (s, e) =>
                     {
-                        Header = textBlock,
-                        Tag = fullPath
+                        MessageBox.Show($"Assigned {child.FullPath}");
                     };
+                    menu.Items.Add(assignItem);
+                    text.ContextMenu = menu;
 
-                    item.MouseRightButtonDown += TreeViewItem_RightClick;
-                    parent.Items.Add(item);
-                    return;
+                    panel.Children.Add(text);
                 }
-                else
+            }
+        }
+
+        private async Task ConnectToSignalR()
+        {
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl("http://localhost:8085/updates")
+                .WithAutomaticReconnect()
+                .Build();
+
+
+            _hubConnection.On<List<PropertyChangedEvent>>("PropertiesChanged", (propertiesChanged) =>
+            {
+                // This goes first — summary of how many properties changed
+                LogToFile($"Received PropertiesChanged event with {propertiesChanged.Count} item(s).");
+
+                foreach (var propertyChanged in propertiesChanged)
                 {
-                    nextNode = new TreeViewItem
+                    LogToFile($"Received update: {propertyChanged.path} → {propertyChanged.value}");
+
+                    if (_propertyBlocks.TryGetValue(propertyChanged.path, out var element))
                     {
-                        Header = current,
-                        Foreground = Brushes.LightGray
-                    };
-                    parent.Items.Add(nextNode);
-                }
-            }
+                        LogToFile($"Updating UI for: {propertyChanged.path}");
 
-            PatchOrInsert(nextNode, segments, fullPath, value, index + 1);
-        }
-        
-
-        private void TreeViewItem_RightClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            e.Handled = true;
-
-            if (sender is TreeViewItem item && item.Tag is string fullPath)
-            {
-                _main.AssignMapperPathToSelectedElement(fullPath);
-                Close();
-            }
-        }
-
-        private HashSet<string> GetExpandedPaths(ItemsControl parent, string currentPath = "")
-        {
-            var expanded = new HashSet<string>();
-
-            foreach (var item in parent.Items)
-            {
-                if (item is TreeViewItem treeItem)
-                {
-                    string thisPath = string.IsNullOrEmpty(currentPath) ? treeItem.Header.ToString() : $"{currentPath}.{treeItem.Header}";
-                    if (treeItem.IsExpanded)
-                        expanded.Add(thisPath);
-
-                    foreach (var sub in GetExpandedPaths(treeItem, thisPath))
-                        expanded.Add(sub);
-                }
-            }
-
-            return expanded;
-        }
-
-        private void RestoreExpandedPaths(ItemsControl parent, HashSet<string> expanded, string currentPath = "")
-        {
-            foreach (var item in parent.Items)
-            {
-                if (item is TreeViewItem treeItem)
-                {
-                    string thisPath = string.IsNullOrEmpty(currentPath) ? treeItem.Header.ToString() : $"{currentPath}.{treeItem.Header}";
-
-                    treeItem.IsExpanded = expanded.Contains(thisPath);
-                    RestoreExpandedPaths(treeItem, expanded, thisPath);
-                }
-            }
-        }
-
-        private void UpdateTreeValue(string fullPath, string newValue)
-        {
-            string[] segments = fullPath.Split('.');
-            TreeViewItem? currentNode = PropertyTree.Items[0] as TreeViewItem;
-
-            for (int i = 1; i < segments.Length; i++)
-            {
-                if (currentNode == null)
-                    return;
-
-                TreeViewItem? next = null;
-                foreach (TreeViewItem child in currentNode.Items)
-                {
-                    if (i == segments.Length - 1)
-                    {
-                        if (child.Header is TextBlock tb && tb.Text.StartsWith(segments[i]))
+                        Dispatcher.Invoke(() =>
                         {
-                            tb.Text = $"{segments[i]}: {newValue}";
-                            return;
-                        }
+                            element.Text = $"{propertyChanged.path}: {propertyChanged.value}";
+                        });
                     }
-                    else if (child.Header is string header && header == segments[i])
+                    else
                     {
-                        next = child;
-                        break;
+                        LogToFile($"Property not found in _propertyBlocks: {propertyChanged.path}");
                     }
                 }
 
-                currentNode = next;
+            });
+
+            _hubConnection.On<string, object>("ReceiveMessage", (key, value) =>
+            {
+                LogToFile($"[DEBUG] SignalR fallback - Key: {key}, Value: {value}");
+            });
+
+            try
+            {
+                await _hubConnection.StartAsync();
+                LogToFile("SignalR connection established successfully.");
+
+                if (!_hasSubscribedToUpdates)
+                {
+                    _hasSubscribedToUpdates = true;
+
+                    Dispatcher.Invoke(async () =>
+                    {
+                        LogToFile("Calling LoadMapperPropertiesAsync() to subscribe for updates.");
+                        await LoadMapperPropertiesAsync();
+                    });
+                }
+                else
+                {
+                    LogToFile("Already subscribed to updates. Skipping LoadMapperPropertiesAsync().");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to connect to SignalR:\n{ex.Message}");
             }
         }
+
+        private void LogToFile(string message)
+        {
+            try
+            {
+                File.AppendAllText("MapperUpdateLog.txt", $"{DateTime.Now:HH:mm:ss} - {message}{Environment.NewLine}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Logging failed: " + ex.Message);
+            }
+
+           
+        }
+
+        // Bottom of Class Here! Don't put anything below if it needs to be in the class!
+        public class PropertyChangedEvent
+        {
+            public string path { get; set; }
+            public string value { get; set; }
+            public string address { get; set; }
+            public string[] bytes { get; set; }
+            public bool frozen { get; set; }
+            public List<string> fieldsChanged { get; set; }
+        }
+
     }
-}
+    }
+
+    
