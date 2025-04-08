@@ -1,27 +1,24 @@
-﻿using System.Windows;
+﻿using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
 
 namespace GameHook.OverlayEditor
 {
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
     public partial class MainWindow : Window
     {
-        private PreviewWindow? _previewWindow;
-
         public MainWindow()
         {
             InitializeComponent();
-        }
-
-        private void OpenPreview_Click(object sender, RoutedEventArgs e)
-        {
-            if (_previewWindow == null || !_previewWindow.IsVisible)
-            {
-                _previewWindow = new PreviewWindow();
-                _previewWindow.Show();
-            }
-            else
-            {
-                _previewWindow.Activate();
-            }
         }
     }
 }

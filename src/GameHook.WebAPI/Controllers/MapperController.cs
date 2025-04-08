@@ -1,4 +1,4 @@
-using GameHook.Application;
+﻿using GameHook.Application;
 using GameHook.Domain;
 using GameHook.Domain.Drivers;
 using GameHook.Domain.Interfaces;

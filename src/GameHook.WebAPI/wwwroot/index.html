@@ -82,17 +82,8 @@
                 </div>
             </div>
 
-            <!--
+            
 
-        <div class="dropdown is-hoverable">
-            <div class="dropdown-trigger header-menu-item">Overlays</div>
-            <div class="dropdown-menu" role="menu">
-                <div class="dropdown-content">
-                    <a class="dropdown-item" onclick="openOverlayEditor()">Create Overlay.</a>
-                </div>
-            </div>
-        </div>
-    </div> -->
 
 
 
@@ -577,18 +568,7 @@
           </div>`
     }
 
-    function openOverlayEditor() {
-        fetch("/OverlayEditor", {
-            method: "POST"
-        }).then(response => {
-            if (!response.ok) {
-                alert("Failed to open the Overlay Editor.");
-            }
-        }).catch(err => {
-            console.error("Error opening Overlay Editor:", err);
-            alert("Something went wrong.");
-        });
-    }
+    
 
     const app = Vue.createApp({
         data() {

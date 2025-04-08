@@ -85,6 +85,7 @@ namespace GameHook.WebAPI
             services.AddHttpClient();
             services.AddCors();
 
+            
             // Add Swagger
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(x =>
@@ -142,7 +143,7 @@ namespace GameHook.WebAPI
             services.AddSingleton<GameHookInstance>();
             services.AddSingleton<ScriptConsole>();
             services.AddSingleton<IClientNotifier, WebSocketClientNotifier>();
-
+            
             if (this.AppSettings.OUTPUT_ALL_PROPERTIES_TO_FILESYSTEM)
             {
                 services.AddSingleton<IClientNotifier, OutputPropertiesToFilesystem>();
@@ -208,6 +209,7 @@ namespace GameHook.WebAPI
                     x.MapGet("/dist/gameHookMapperClient.js", () => Results.File(EmbededResources.dist_gameHookMapperClient_js, contentType: "application/javascript"));
                 }
 
+                
                 x.MapControllers();
                 x.MapHub<UpdateHub>("/updates");
             });

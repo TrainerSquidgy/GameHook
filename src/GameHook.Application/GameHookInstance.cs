@@ -255,6 +255,7 @@ namespace GameHook.Application
                     "GBA" => new GBA_PlatformOptions(),
                     "PSX" => new PSX_PlatformOptions(),
                     "NDS" => new NDS_PlatformOptions(),
+                    "SMS" => new SMS_PlatformOptions(),
                     _ => throw new Exception($"Unknown game platform {Mapper.Metadata.GamePlatform}.")
                 };
 

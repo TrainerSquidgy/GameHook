@@ -283,7 +283,17 @@ namespace GameHook.Application.GameHookProperties
                     throw new Exception("Glossary is NULL.");
                 }
 
-                bytes = BitConverter.GetBytes(Glossary.GetSingleByValue(value).Key);
+                var intValue = (int)Glossary.GetSingleByValue(value).Key;
+                int length = Length ?? 1;
+
+                var rawBytes = BitConverter.GetBytes(intValue);
+                bytes = rawBytes.Take(length).ToArray();
+
+                // Pad if needed
+                if (bytes.Length < length)
+                {
+                    bytes = bytes.Concat(new byte[length - bytes.Length]).ToArray();
+                }
             }
             else
             {

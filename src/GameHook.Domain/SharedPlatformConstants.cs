@@ -84,6 +84,22 @@ public static class SharedPlatformConstants
                 }
             }
         },
+         new PlatformEntry
+{
+    IsBigEndian = false,
+    BizhawkIdentifier = "SMS",
+    MemoryLayout = new PlatformMemoryLayoutEntry[]
+    {
+        new PlatformMemoryLayoutEntry
+        {
+            BizhawkIdentifier = "System Bus",
+            CustomPacketTransmitPosition = 0,
+            PhysicalStartingAddress = 0xC000,
+            Length = 0x2000
+        }
+    }
+}
+,
         new PlatformEntry()
         {
             IsBigEndian = false,

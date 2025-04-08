@@ -96,8 +96,25 @@ namespace GameHook.Application
     {
         public EndianTypes EndianType { get; } = EndianTypes.BigEndian;
 
-        public MemoryAddressBlock[] Ranges { get; } = Array.Empty<MemoryAddressBlock>();
+        public MemoryAddressBlock[] Ranges { get; } = new[]
+        {
+        new MemoryAddressBlock("Main RAM", 0x02000000, 0x400000) // 4MB Main RAM
+    };
     }
+
+    public class SMS_PlatformOptions : IPlatformOptions
+    {
+        public EndianTypes EndianType { get; } = EndianTypes.BigEndian;
+
+        public MemoryAddressBlock[] Ranges { get; } = new List<MemoryAddressBlock>()
+    {
+        // Temporarily expose the entire SMS memory area from 0x0000 to 0xDFFF
+        new MemoryAddressBlock("System RAM", 0xC000, 0x2000), // $C000–$DFFF
+        new MemoryAddressBlock("Mirror RAM", 0xE000, 0x2000), // $E000–$FFFF
+    }.ToArray();
+    }
+
+
 
     /* ===== PlayStation ===== */
     /* http://www.raphnet.net/electronique/psx_adaptor/Playstation.txt */

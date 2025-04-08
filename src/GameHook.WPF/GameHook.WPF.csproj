@@ -51,13 +51,7 @@
 	  </None>
 	</ItemGroup>
 
-	<Target Name="CopyOverlayEditor" AfterTargets="Build">
-		<ItemGroup>
-			<OverlayEditorFiles Include="$(SolutionDir)GameHook.OverlayEditor\bin\$(Configuration)\net6.0-windows\GameHook.OverlayEditor.*" />
-		</ItemGroup>
-
-		<Copy SourceFiles="@(OverlayEditorFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-	</Target>
+	
 	
 	
 
