@@ -1,0 +1,15 @@
+﻿<Window x:Class="GameHook.OverlayEditor.MapperBrowserWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Mapper Properties"
+        Height="600" Width="400"
+        Background="#1E1E1E"
+        Foreground="White"
+        WindowStartupLocation="CenterOwner">
+    <Grid>
+        <TreeView x:Name="PropertyTree"
+          Margin="8"
+          Background="Transparent"
+          Foreground="White"/>
+    </Grid>
+</Window>
