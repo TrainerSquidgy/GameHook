@@ -23,6 +23,10 @@ namespace GameHook.OverlayEditor
         private readonly Dictionary<string, TextBlock> _propertyBlocks = new();
         private HubConnection? _hubConnection;
         private static readonly HttpClient _httpClient = new HttpClient();
+
+        private readonly DispatcherTimer _refreshTimer = new DispatcherTimer();
+        private readonly HashSet<string> _expandedPaths = new();
+
         private class Node
 
         {
@@ -30,8 +34,7 @@ namespace GameHook.OverlayEditor
             public string FullPath { get; set; } = "";
             public string? Value { get; set; } // Only non-null at leaf nodes
             public Dictionary<string, Node> Children { get; } = new();
-
-
+            
             public Node(string name)
             {
                 Name = name;
@@ -51,6 +54,9 @@ namespace GameHook.OverlayEditor
         {
             InitializeComponent();
             _main = main;
+            _refreshTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _refreshTimer.Tick += RefreshTimer_Tick;
+            _refreshTimer.Start();
 
             string debugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MapperUpdateLog.txt");
 
@@ -265,6 +271,69 @@ namespace GameHook.OverlayEditor
 
            
         }
+
+        private async void RefreshTimer_Tick(object? sender, EventArgs e)
+        {
+            try
+            {
+                // Save expanded paths before clearing
+                _expandedPaths.Clear();
+                SaveExpandedStates(PropertyListPanel);
+
+                var response = await _httpClient.GetAsync("http://localhost:8085/mapper/properties");
+                if (!response.IsSuccessStatusCode) return;
+
+                var json = await response.Content.ReadAsStringAsync();
+                var propertiesArray = JArray.Parse(json);
+
+                var flatProperties = new List<(string path, string value)>();
+                foreach (var item in propertiesArray)
+                {
+                    var path = item["path"]?.ToString() ?? "(no path)";
+                    var value = item["value"]?.ToString() ?? "(no value)";
+                    flatProperties.Add((path, value));
+                }
+
+                var root = BuildTreeFromPaths(flatProperties);
+                PropertyListPanel.Children.Clear();
+                RenderNodeToPanel(root, PropertyListPanel);
+
+                RestoreExpandedStates(PropertyListPanel);
+            }
+            catch (Exception ex)
+            {
+                LogToFile($"[ERROR] RefreshTimer_Tick failed: {ex.Message}");
+            }
+        }
+
+        private void SaveExpandedStates(Panel panel)
+        {
+            foreach (var child in panel.Children)
+            {
+                if (child is Expander expander && expander.IsExpanded)
+                {
+                    _expandedPaths.Add(expander.Header?.ToString() ?? "");
+                    if (expander.Content is Panel innerPanel)
+                        SaveExpandedStates(innerPanel);
+                }
+            }
+        }
+
+        private void RestoreExpandedStates(Panel panel)
+        {
+            foreach (var child in panel.Children)
+            {
+                if (child is Expander expander)
+                {
+                    if (_expandedPaths.Contains(expander.Header?.ToString() ?? ""))
+                        expander.IsExpanded = true;
+
+                    if (expander.Content is Panel innerPanel)
+                        RestoreExpandedStates(innerPanel);
+                }
+            }
+        }
+
 
         // Bottom of Class Here! Don't put anything below if it needs to be in the class!
         public class PropertyChangedEvent
