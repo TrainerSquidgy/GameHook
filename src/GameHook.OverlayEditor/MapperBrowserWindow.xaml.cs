@@ -1,5 +1,4 @@
 ﻿using Esprima.Ast;
-using Microsoft.AspNetCore.SignalR.Client;
 using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
@@ -21,7 +20,6 @@ namespace GameHook.OverlayEditor
         private bool _hasSubscribedToUpdates = false;
         private readonly MainWindow _main;
         private readonly Dictionary<string, TextBlock> _propertyBlocks = new();
-        private HubConnection? _hubConnection;
         private static readonly HttpClient _httpClient = new HttpClient();
 
         private readonly DispatcherTimer _refreshTimer = new DispatcherTimer();
@@ -54,7 +52,7 @@ namespace GameHook.OverlayEditor
         {
             InitializeComponent();
             _main = main;
-            _refreshTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _refreshTimer.Interval = TimeSpan.FromMilliseconds(2000);
             _refreshTimer.Tick += RefreshTimer_Tick;
             _refreshTimer.Start();
 
@@ -107,9 +105,7 @@ namespace GameHook.OverlayEditor
                 Node root = BuildTreeFromPaths(flatProperties);
 
                 RenderNodeToPanel(root, PropertyListPanel);
-                await ConnectToSignalR();
-                string debugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MapperUpdateLog.txt");
-                File.AppendAllText(debugPath, $"[{DateTime.Now}] ConnectToSignalR() started.\n");
+                
             }
             catch (Exception ex)
             {
@@ -192,72 +188,6 @@ namespace GameHook.OverlayEditor
             }
         }
 
-        private async Task ConnectToSignalR()
-        {
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl("http://localhost:8085/updates")
-                .WithAutomaticReconnect()
-                .Build();
-
-
-            _hubConnection.On<List<PropertyChangedEvent>>("PropertiesChanged", (propertiesChanged) =>
-            {
-                // This goes first — summary of how many properties changed
-                LogToFile($"Received PropertiesChanged event with {propertiesChanged.Count} item(s).");
-
-                foreach (var propertyChanged in propertiesChanged)
-                {
-                    LogToFile($"Received update: {propertyChanged.path} → {propertyChanged.value}");
-
-                    if (_propertyBlocks.TryGetValue(propertyChanged.path, out var element))
-                    {
-                        LogToFile($"Updating UI for: {propertyChanged.path}");
-
-                        Dispatcher.Invoke(() =>
-                        {
-                            element.Text = $"{propertyChanged.path}: {propertyChanged.value}";
-                        });
-                    }
-                    else
-                    {
-                        LogToFile($"Property not found in _propertyBlocks: {propertyChanged.path}");
-                    }
-                }
-
-            });
-
-            _hubConnection.On<string, object>("ReceiveMessage", (key, value) =>
-            {
-                LogToFile($"[DEBUG] SignalR fallback - Key: {key}, Value: {value}");
-            });
-
-            try
-            {
-                await _hubConnection.StartAsync();
-                LogToFile("SignalR connection established successfully.");
-
-                if (!_hasSubscribedToUpdates)
-                {
-                    _hasSubscribedToUpdates = true;
-
-                    Dispatcher.Invoke(async () =>
-                    {
-                        LogToFile("Calling LoadMapperPropertiesAsync() to subscribe for updates.");
-                        await LoadMapperPropertiesAsync();
-                    });
-                }
-                else
-                {
-                    LogToFile("Already subscribed to updates. Skipping LoadMapperPropertiesAsync().");
-                }
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to connect to SignalR:\n{ex.Message}");
-            }
-        }
-
         private void LogToFile(string message)
         {
             try
@@ -295,8 +225,22 @@ namespace GameHook.OverlayEditor
                 }
 
                 var root = BuildTreeFromPaths(flatProperties);
-                PropertyListPanel.Children.Clear();
-                RenderNodeToPanel(root, PropertyListPanel);
+                foreach (var (path, value) in flatProperties)
+{
+    if (_propertyBlocks.TryGetValue(path, out var textBlock))
+    {
+        if (textBlock.Text != $"{path}: {value}")
+        {
+            textBlock.Text = $"{path}: {value}";
+        }
+    }
+    else
+    {
+        // If new property was added (e.g., hot reload), rebuild everything (or you can add-in here)
+        await LoadMapperPropertiesAsync();
+        return;
+    }
+}
 
                 RestoreExpandedStates(PropertyListPanel);
             }
