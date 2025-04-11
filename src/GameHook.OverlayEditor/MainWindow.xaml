@@ -8,7 +8,7 @@
 
     <DockPanel>
         <!-- 🧭 Top Toolbar -->
-        
+
 
         <ToolBar DockPanel.Dock="Top" Margin="5">
             <Separator />
@@ -26,10 +26,10 @@
             <Button Content="Clone" Click="CloneOverlay_Click" Margin="5,0,0,0"/>
             <Button Content="Delete" Click="DeleteOverlay_Click" Margin="5,0,0,0"/>
             <Button Content="View Mapper Values" Click="ViewMapperValues_Click" Margin="20,0,0,0"/>
-            
+
         </ToolBar>
-        
-       
+
+
 
         <!-- 🧰 Left Sidebar -->
         <DockPanel DockPanel.Dock="Left" Width="250" Background="#FF2B2B2B">
@@ -51,12 +51,41 @@
             </StackPanel>
         </DockPanel>
 
-        <!-- 🎨 Center Preview Canvas -->
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#FF1E1E1E">
-            <Canvas x:Name="PreviewCanvas" Width="960" Height="540" Background="#FF202020">
-            
-                
-            </Canvas>
-        </ScrollViewer>
+        <!-- 🎨 Zoomable & Scaled Preview Canvas -->
+        <Grid Grid.Column="1" Background="#FF1E1E1E">
+
+            <!-- Viewbox keeps the canvas scaled -->
+            <Viewbox Name="CanvasViewbox"
+             Stretch="Uniform"
+             HorizontalAlignment="Center"
+             VerticalAlignment="Top"
+             Margin="0,20,0,0">
+                <Canvas Name="PreviewCanvas"
+                Width="1920"
+                Height="1080"
+                Background="#FF505050" />
+            </Viewbox>
+
+            <!-- Placeholder UI panel underneath for selected element details -->
+            <StackPanel Orientation="Horizontal"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,559,0,0"
+                Height="171" Width="950">
+                <TextBlock Text="Canvas Size:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <ComboBox x:Name="ResolutionDropdown" Width="150" SelectedIndex="0" Height="24">
+                    <ComboBoxItem Content="1920x1080"/>
+                    <ComboBoxItem Content="1280x720"/>
+                    <ComboBoxItem Content="1600x900"/>
+                    <ComboBoxItem Content="1024x576"/>
+                </ComboBox>
+                <Button Content="Apply" Click="ApplyResolution_Click" Margin="10,0,0,0" Height="22"/>
+                <TextBlock Text="🔍 No element selected"
+                   Foreground="White"
+                   FontSize="14"
+                   VerticalAlignment="Center"/>
+                <!-- You'll add live details here dynamically later -->
+            </StackPanel>
+        </Grid>
     </DockPanel>
 </Window>
