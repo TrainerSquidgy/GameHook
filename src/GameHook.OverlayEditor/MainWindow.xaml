@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Overlay Editor" Height="800" Width="1200"
         Loaded="MainWindow_Loaded"
+        KeyDown="MainWindow_KeyDown"
+        FocusManager.FocusedElement="{Binding RelativeSource={RelativeSource Self}}"
         WindowStartupLocation="CenterScreen"
         Background="#FF1E1E1E">
 
@@ -25,6 +27,9 @@
             <Button Content="Load" Click="LoadOverlay_Click" Margin="5,0,0,0"/>
             <Button Content="Clone" Click="CloneOverlay_Click" Margin="5,0,0,0"/>
             <Button Content="Delete" Click="DeleteOverlay_Click" Margin="5,0,0,0"/>
+            <Button Content="Undo" Click="Undo_Click" Margin="5,0,0,0"/>
+            <Button Content="Redo" Click="Redo_Click" Margin="5,0,0,0"/>
+
             <Button Content="View Mapper Values" Click="ViewMapperValues_Click" Margin="20,0,0,0"/>
 
         </ToolBar>
@@ -53,25 +58,31 @@
 
         <!-- 🎨 Zoomable & Scaled Preview Canvas -->
         <Grid Grid.Column="1" Background="#FF1E1E1E">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="127*"/>
+                <ColumnDefinition Width="823*"/>
+            </Grid.ColumnDefinitions>
 
             <!-- Viewbox keeps the canvas scaled -->
             <Viewbox Name="CanvasViewbox"
              Stretch="Uniform"
-             HorizontalAlignment="Center"
+             HorizontalAlignment="Left"
              VerticalAlignment="Top"
-             Margin="0,20,0,0">
+             Margin="0,20,0,0" Grid.ColumnSpan="2">
                 <Canvas Name="PreviewCanvas"
                 Width="1920"
                 Height="1080"
-                Background="#FF505050" />
+                MouseLeftButtonDown="PreviewCanvas_MouseLeftButtonDown"
+                Background="#FF505050"
+                        />
             </Viewbox>
 
             <!-- Placeholder UI panel underneath for selected element details -->
             <StackPanel Orientation="Horizontal"
-                HorizontalAlignment="Center"
+                HorizontalAlignment="Left"
                 VerticalAlignment="Top"
                 Margin="0,559,0,0"
-                Height="171" Width="950">
+                Height="171" Width="950" Grid.ColumnSpan="2">
                 <TextBlock Text="Canvas Size:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <ComboBox x:Name="ResolutionDropdown" Width="150" SelectedIndex="0" Height="24">
                     <ComboBoxItem Content="1920x1080"/>
