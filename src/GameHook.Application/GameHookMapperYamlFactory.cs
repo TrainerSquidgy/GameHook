@@ -168,6 +168,22 @@ namespace GameHook.Application
             return dictionary.ContainsKey(key) ? dictionary[key].ToString() : null;
         }
 
+        private static int? GetIntValue(this IDictionary<object, object> dictionary, string key)
+        {
+            if (dictionary.ContainsKey(key) == false || string.IsNullOrEmpty(dictionary[key].ToString()))
+            {
+                return null;
+            }
+
+            var value = dictionary[key].ToString() ?? string.Empty;
+            if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                return Convert.ToInt32(value[2..], 16);
+            }
+
+            return int.Parse(value);
+        }
+
         private static bool DoesDefineValue(this IDictionary<object, object> dictionary, string key)
         {
             return dictionary.ContainsKey(key) ? string.IsNullOrEmpty(dictionary[key].ToString()) == false : false;
@@ -190,6 +206,11 @@ namespace GameHook.Application
             var preprocessor = source.GetValue("preprocessor")?.NormalizeMemoryAddresses();
 
             // TODO: 3/29/2023 Remove 'postprocessor' key in a future version. Mappers will migrate to postprocessorReader.
+            var indirectAddress = source.GetValue("indirectAddress")?.NormalizeMemoryAddresses();
+            var indirectSize = source.GetIntValue("indirectSize");
+            var indirectIndexOffset = source.GetIntValue("indirectIndexOffset");
+            var indirectEntryCount = source.GetIntValue("indirectEntryCount");
+            var indirectMemoryContainer = source.GetValue("indirectMemoryContainer");
             var postprocessorReader = source.GetValue("postprocessorReader") ?? source.GetValue("postprocessor");
             var postprocessorWriter = source.GetValue("postprocessorWriter");
 
@@ -232,6 +253,11 @@ namespace GameHook.Application
                 throw new MapperInitException($"Type {type} should not have the property characterMap.");
             }
 
+            if (string.IsNullOrEmpty(indirectAddress) == false && indirectSize == null)
+            {
+                throw new MapperInitException($"Property {key} defines indirectAddress but is missing required field indirectSize.");
+            }
+
             if (type == "macro")
             {
                 if (address == null)
@@ -256,6 +282,11 @@ namespace GameHook.Application
                     Description = description,
                     YamlPreprocessor = preprocessor,
                     YamlPostprocessorReader = postprocessorReader,
+                    IndirectAddress = indirectAddress,
+                    IndirectSize = indirectSize,
+                    IndirectIndexOffset = indirectIndexOffset,
+                    IndirectEntryCount = indirectEntryCount,
+                    IndirectMemoryContainer = indirectMemoryContainer,
                     YamlPostprocessorWriter = postprocessorWriter,
                     StaticValue = staticValue
                 };

@@ -18,6 +18,12 @@
         public string? Reference { get; set; }
         public string? Description { get; set; }
 
+        public string? IndirectAddress { get; set; }
+        public int? IndirectSize { get; set; }
+        public int? IndirectIndexOffset { get; set; }
+        public int? IndirectEntryCount { get; set; }
+        public string? IndirectMemoryContainer { get; set; }
+
         public string? StaticValue { get; set; }
 
         public string? YamlPreprocessor { get; set; }
@@ -37,6 +43,7 @@
         string Type { get; }
         int? Length { get; }
         uint? Address { get; }
+        uint? IndirectAddress { get; }
 
         int? Position { get; }
 

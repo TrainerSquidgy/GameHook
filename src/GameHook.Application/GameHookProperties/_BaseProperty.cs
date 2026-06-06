@@ -1,4 +1,4 @@
-﻿using GameHook.Domain;
+using GameHook.Domain;
 using GameHook.Domain.Interfaces;
 using GameHook.Domain.Preprocessors;
 using NCalc;
@@ -16,16 +16,19 @@ namespace GameHook.Application.GameHookProperties
             Length = MapperVariables.Length;
             SetAddress(MapperVariables.Address);
             Position = MapperVariables.Position;
+            SetIndirectAddress(MapperVariables.IndirectAddress);
             Reference = MapperVariables.Reference;
             Value = MapperVariables.StaticValue;
             Description = MapperVariables.Description;
         }
 
         private MemoryAddress? _address { get; set; }
+        private MemoryAddress? _indirectAddress { get; set; }
         private object? _value { get; set; }
         private byte[]? _bytes { get; set; }
 
         private bool IsAddressMathSolved { get; set; }
+        private bool IsIndirectAddressMathSolved { get; set; }
         private bool ShouldRunReferenceTransformer
         {
             get { return (Type == "bit" || Type == "bool" || Type == "int" || Type == "uint") && Glossary != null; }
@@ -67,6 +70,8 @@ namespace GameHook.Application.GameHookProperties
 
         public string? AddressExpression { get; private set; }
 
+        public string? IndirectAddressExpression { get; private set; }
+
         public MemoryAddress? Address
         {
             get => _address;
@@ -76,6 +81,18 @@ namespace GameHook.Application.GameHookProperties
 
                 FieldsChanged.Add("address");
                 _address = value;
+            }
+        }
+
+        public MemoryAddress? IndirectAddress
+        {
+            get => _indirectAddress;
+            set
+            {
+                if (_indirectAddress == value) return;
+
+                FieldsChanged.Add("indirectAddress");
+                _indirectAddress = value;
             }
         }
 
@@ -180,6 +197,18 @@ namespace GameHook.Application.GameHookProperties
                 }
             }
 
+            if (string.IsNullOrEmpty(IndirectAddressExpression) == false && IsIndirectAddressMathSolved == false)
+            {
+                if (AddressMath.TrySolve(IndirectAddressExpression, Instance.Variables, out var solvedIndirectAddress))
+                {
+                    IndirectAddress = solvedIndirectAddress;
+                }
+                else
+                {
+                    // TODO: Write a log entry here.
+                }
+            }
+
             if (address == null && bytes == null)
             {
                 // There is nothing to do for this property, as it does not have an address or bytes.
@@ -239,6 +268,8 @@ namespace GameHook.Application.GameHookProperties
                 value = Convert.ToInt32(postprocessorExpression.Evaluate());
             }
 
+            value = ApplyIndirectLookup(memoryContainer, value);
+
             // Reference lookup
             if (ShouldRunReferenceTransformer)
             {
@@ -272,9 +303,103 @@ namespace GameHook.Application.GameHookProperties
             }
         }
 
+        public void SetIndirectAddress(string? indirectAddressExpression)
+        {
+            if (string.IsNullOrEmpty(indirectAddressExpression))
+            {
+                return;
+            }
+
+            IndirectAddressExpression = indirectAddressExpression;
+
+            IsIndirectAddressMathSolved = AddressMath.TrySolve(indirectAddressExpression, new Dictionary<string, object?>(), out var indirectAddress);
+
+            if (IsIndirectAddressMathSolved)
+            {
+                IndirectAddress = indirectAddress;
+            }
+        }
+
+        private object? ApplyIndirectLookup(IMemoryManager memoryContainer, object? value)
+        {
+            if (string.IsNullOrEmpty(MapperVariables.IndirectAddress))
+            {
+                return value;
+            }
+
+            if (IndirectAddress == null)
+            {
+                throw new Exception($"Property '{Path}' defines indirectAddress but the address could not be resolved.");
+            }
+
+            if (value == null)
+            {
+                return value;
+            }
+
+            var indirectSize = MapperVariables.IndirectSize;
+            if (indirectSize == null || indirectSize <= 0)
+            {
+                throw new Exception($"Property '{Path}' defines indirectAddress but indirectSize is missing or invalid.");
+            }
+
+            var rawIndex = Convert.ToInt64(value);
+            var indexOffset = MapperVariables.IndirectIndexOffset ?? 0;
+            var tableIndex = rawIndex - indexOffset;
+
+            if (tableIndex < 0)
+            {
+                // Values below the indirect table's first slot are ordinary legacy IDs.
+                // Keep the original value and let the normal glossary/reference lookup handle it.
+                return value;
+            }
+
+            var indirectEntryCount = MapperVariables.IndirectEntryCount;
+            if (indirectEntryCount != null && tableIndex >= indirectEntryCount)
+            {
+                return value;
+            }
+
+            var lookupAddress = (MemoryAddress)(IndirectAddress.Value + (tableIndex * indirectSize.Value));
+            var lookupBytes = GetBytes(memoryContainer, lookupAddress, indirectSize.Value, MapperVariables.IndirectMemoryContainer ?? MapperVariables.MemoryContainer);
+            var lookupValue = BytesToUnsignedInteger(lookupBytes);
+
+            if (Convert.ToUInt64(lookupValue) == 0)
+            {
+                return value;
+            }
+
+            return lookupValue;
+        }
+
+        private static byte[] GetBytes(IMemoryManager memoryContainer, MemoryAddress address, int length, string? memoryContainerName)
+        {
+            if (string.IsNullOrEmpty(memoryContainerName))
+            {
+                return memoryContainer.DefaultNamespace.GetBytes(address, length).Data;
+            }
+
+            return memoryContainer.Namespaces[memoryContainerName].GetBytes(address, length).Data;
+        }
+
+        private object BytesToUnsignedInteger(byte[] bytes)
+        {
+            if (Instance == null) throw new Exception("Instance is NULL.");
+            if (Instance.PlatformOptions == null) throw new Exception("Instance.PlatformOptions is NULL.");
+
+            byte[] value = new byte[8];
+            Array.Copy(bytes.ReverseBytesIfBE(Instance.PlatformOptions.EndianType), value, bytes.Length);
+            return BitConverter.ToUInt64(value, 0);
+        }
+
         public async Task<byte[]> WriteValue(string value, bool? freeze)
         {
             byte[] bytes;
+
+            if (string.IsNullOrEmpty(MapperVariables.IndirectAddress) == false)
+            {
+                throw new NotSupportedException($"Property '{Path}' uses indirectAddress and cannot currently be written safely.");
+            }
 
             if (ShouldRunReferenceTransformer)
             {
