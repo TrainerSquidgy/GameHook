@@ -105,7 +105,7 @@ public sealed class GameHookIntegrationForm : ToolFormBase, IExternalToolForm, I
                 {
                     var memoryDomain = MemoryDomains?[entry.BizhawkIdentifier] ?? throw new Exception($"Memory domain not found.");
 
-                    memoryDomain.BulkPeekByte(0x00L.RangeToExclusive(entry.Length), DataBuffer);
+                    memoryDomain.BulkPeekByte(entry.BizhawkStartingAddress.RangeToExclusive(entry.BizhawkStartingAddress + entry.Length), DataBuffer);
 
                     GameHookData_Accessor?.WriteArray(entry.CustomPacketTransmitPosition, DataBuffer, 0, entry.Length);
                 }
@@ -143,6 +143,7 @@ public static class SharedPlatformConstants
     public record PlatformMemoryLayoutEntry
     {
         public string BizhawkIdentifier { get; set; } = string.Empty;
+        public long BizhawkStartingAddress { get; set; } = 0x00;
         public int CustomPacketTransmitPosition { get; set; } = 0;
         public int Length { get; set; } = 0;
 
@@ -236,6 +237,13 @@ public static class SharedPlatformConstants
                     CustomPacketTransmitPosition = 0x2000 + 0x1FFF + 1,
                     PhysicalStartingAddress = 0xFF80,
                     Length = 0x7E
+                },
+                new PlatformMemoryLayoutEntry {
+                    BizhawkIdentifier = "WRAM",
+                    BizhawkStartingAddress = 0x2000,
+                    CustomPacketTransmitPosition = 0x6000,
+                    PhysicalStartingAddress = 0x10000,
+                    Length = 0x1000
                 }
             }
         },

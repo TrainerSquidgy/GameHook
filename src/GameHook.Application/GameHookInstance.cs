@@ -126,6 +126,16 @@ namespace GameHook.Application
             foreach (var result in driverResult)
             {
                 MemoryContainerManager.DefaultNamespace.Fill(result.Key, result.Value);
+                var range = PlatformOptions.Ranges.FirstOrDefault(x => x.StartingAddress == result.Key);
+                if (range != null)
+                {
+                    if (!MemoryContainerManager.Namespaces.ContainsKey(range.Name))
+                    {
+                        MemoryContainerManager.Namespaces[range.Name] = new MemoryNamespace();
+                    }
+
+                    MemoryContainerManager.Namespaces[range.Name].Fill(result.Key, result.Value);
+                }
             }
 
 #if DEBUG
